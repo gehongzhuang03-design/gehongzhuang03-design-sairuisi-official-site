@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+backend/data/leads.json
+*.log
+.demo-server.pid
+.demo-logs/
+.DS_Store

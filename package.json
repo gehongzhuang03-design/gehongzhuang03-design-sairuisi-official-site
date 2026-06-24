@@ -1,0 +1,13 @@
+{
+  "name": "sairuisi-official-site",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n WEB,API -c blue,magenta \"pnpm --dir frontend dev\" \"pnpm --dir backend dev\"",
+    "build": "pnpm --dir frontend build",
+    "start": "pnpm --dir backend start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
