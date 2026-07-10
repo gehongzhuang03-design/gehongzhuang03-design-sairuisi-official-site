@@ -1,0 +1,40 @@
+name: Website notification sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-notification-sync
+  cancel-in-progress: false
+
+jobs:
+  send-notifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prod
+      - name: Send pending website notifications
+        run: node backend/scripts/sync-notifications.mjs
+        env:
+          SITE_URL: https://siris.onrender.com
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          LEAD_EMAIL_TO: ${{ secrets.LEAD_EMAIL_TO }}
+          SMTP_HOST: smtp.qq.com
+          SMTP_PORT: '465'
+          SMTP_SECURE: 'true'
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
