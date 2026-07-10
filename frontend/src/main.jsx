@@ -1,255 +1,517 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   ArrowRight,
-  BadgeCheck,
-  BookOpen,
-  BrainCircuit,
-  BriefcaseBusiness,
+  Books,
+  ChatCircleDots,
   Check,
-  ChevronDown,
-  ClipboardCheck,
-  Code2,
+  ClipboardText,
+  Compass,
   FileText,
-  Layers3,
-  Menu,
-  MessageCircle,
-  MousePointer2,
-  Presentation,
-  Radar,
-  ShieldAlert,
+  GraduationCap,
+  List,
+  PaperPlaneTilt,
+  PresentationChart,
   ShieldCheck,
-  Sparkles,
+  Sparkle,
+  Stack,
   Target,
+  Timer,
+  TrendUp,
   Trophy,
-  Users,
-  X,
-  Zap
-} from 'lucide-react'
+  UsersThree,
+  X
+} from '@phosphor-icons/react'
 import './styles.css'
 
-const metrics = [
-  { value: 8, suffix: '年', label: '深耕双创竞赛服务' },
-  { value: 30, suffix: '+', label: '年均国家级奖项案例' },
-  { value: 150, suffix: '+', label: '累计国家级奖项案例' },
-  { value: 500, suffix: '+', label: '服务团队与教师项目' }
-]
-
-const eventTabs = [
+const heroSlides = [
   {
-    id: 'internet',
-    name: '中国国际大学生创新大赛',
-    tag: '主流高规格赛道',
-    title: '把真实需求、技术成果和商业闭环讲成一个强项目',
-    desc: '围绕红旅、产业命题、高教主赛道等不同方向，重构项目价值、用户证据、技术路径和商业模型，让评委快速理解“为什么值得”。',
-    points: ['赛道规则研判', '项目命题升级', '商业计划书重构', '路演答辩强化']
+    image: '/assets/flagship/hero-apple-4k.webp',
+    tone: 'light',
+    styleName: '极简',
+    eyebrow: '2027 全周期竞赛服务',
+    title: '为好项目，\n打造旗舰级表达。',
+    desc: '面向学生团队与高校教师，提供从项目诊断、选题定位、计划书与申报材料，到技术 Demo、PPT、答辩训练和整队管理的完整支持。',
+    cta: '预约项目诊断',
+    href: '#contact'
   },
   {
-    id: 'challenge',
-    name: '挑战杯 / 创青春',
-    tag: '研究与创业并重',
-    title: '从研究问题到成果表达，形成可信的证据链',
-    desc: '帮助团队梳理研究基础、技术创新、应用场景、社会价值和成果转化路径，避免材料堆叠，强化专业可信度。',
-    points: ['研究价值论证', '成果材料梳理', '数据图表设计', '专家问答预案']
+    image: '/assets/flagship/hero-xiaomi-4k.webp',
+    tone: 'bright',
+    styleName: '矩阵',
+    eyebrow: 'PRODUCTIZED SERVICE MATRIX',
+    title: '让学生项目，\n更接近它应得的结果。',
+    desc: '把创意、计划书、PPT、材料精修和答辩表达做成清晰可选的服务模块，按项目基础选择合适档位。',
+    cta: '查看学生优惠报价',
+    href: '#student-plans'
   },
   {
-    id: 'service',
-    name: '三创赛 / 服务外包',
-    tag: '产品与方案导向',
-    title: '用可演示系统和清晰交付，让方案更像真实产品',
-    desc: '覆盖需求分析、交互原型、演示系统、数据看板、方案文档和答辩材料，提升项目完成度与现场说服力。',
-    points: ['产品原型设计', 'Web / App Demo', '服务方案打磨', '技术文档输出']
-  },
-  {
-    id: 'career',
-    name: '职业规划 / 教学创新',
-    tag: '教师与学生成长',
-    title: '面向教师成果凝练与学生成长表达的专业支撑',
-    desc: '围绕教学创新大赛、职业规划大赛、教学成果奖与双创指导能力提升，建立可复用的方法体系和材料体系。',
-    points: ['教学成果凝练', '职业叙事设计', '指导案例沉淀', '成果证明整理']
+    image: '/assets/flagship/hero-samsung-4k.webp',
+    tone: 'dark',
+    styleName: '沉浸',
+    eyebrow: 'IMMERSIVE TEAM COACHING',
+    title: '把整队带队，\n变成清晰可控的过程。',
+    desc: '围绕团队管理、高质量材料、节点督导和模拟答辩，为高校教师提供五档带队方案。',
+    cta: '查看教师带队方案',
+    href: '#teacher-plans'
   }
 ]
 
-const services = [
-  { icon: Target, no: '01', title: '项目诊断与赛道定位', desc: '根据团队基础、技术储备、目标赛事和时间节点，判断最值得打磨的方向。', tags: ['赛道选择', '选题升级', '差异化定位'] },
-  { icon: FileText, no: '02', title: '商业计划书与申报材料', desc: '把散落的事实整理成完整证据链，重构市场、产品、模式、财务和社会价值表达。', tags: ['BP', '申报书', '数据图表'] },
-  { icon: Code2, no: '03', title: '技术原型与演示系统', desc: '为项目补齐可体验、可展示、可持续迭代的产品形态，提升成果可信度。', tags: ['Web', '小程序', '数据看板'] },
-  { icon: Presentation, no: '04', title: '路演 PPT 与答辩训练', desc: '重构故事线、视觉系统和答辩问题库，把临场发挥变成可训练能力。', tags: ['PPT', '话术', '模拟评审'] },
-  { icon: BookOpen, no: '05', title: '教师专业提升服务', desc: '面向教师教学创新、课题申报、成果凝练、论文专利与职称材料提供系统支持。', tags: ['教创赛', '课题', '成果奖'] },
-  { icon: ClipboardCheck, no: '06', title: '赛前冲刺与交付管理', desc: '按里程碑推进内容、技术、视觉和表达，节点明确，过程透明，交易走平台。', tags: ['里程碑', '复盘', '平台交易'] }
+const productStories = [
+  {
+    no: '01',
+    title: '学生优惠报价',
+    desc: '面向学生团队的竞赛服务优惠方案，透明定价，按基础选择。',
+    price: '¥1199',
+    suffix: '起',
+    image: '/assets/flagship/product-student.png',
+    href: '#student-plans',
+    tone: 'blue'
+  },
+  {
+    no: '02',
+    title: '教师带队方案',
+    desc: '为高校教师设计的带队支持方案，从组队推进到项目落地。',
+    price: '¥3999',
+    suffix: '起',
+    image: '/assets/flagship/product-teacher.png',
+    href: '#teacher-plans',
+    tone: 'orange'
+  },
+  {
+    no: '03',
+    title: '高质量材料',
+    desc: '规范搭建、逻辑重构与专业表达，让申报材料更清晰、更高效。',
+    price: '全链路',
+    suffix: '交付',
+    image: '/assets/flagship/product-materials.png',
+    href: '#services',
+    tone: 'slate'
+  }
 ]
 
-const cases = [
-  { title: '智能制造项目', award: '国家级金奖方向', stat: '18×', desc: '从实验室样机出发，重新定义产业场景、客户痛点和技术指标，让成果更容易被理解。' },
-  { title: '乡村振兴项目', award: '国家级银奖方向', stat: '4.6M', desc: '从“讲情怀”转向产品、渠道、供应链和社会价值闭环，增强项目可持续性。' },
-  { title: '数字医疗项目', award: '国家级一等奖方向', stat: '92%', desc: '把复杂算法转译为临床价值、指标证明和应用流程，提升专业评审信任度。' }
+const serviceItems = [
+  { icon: Target, no: '01', title: '精准定位', desc: '赛道判断、选题诊断与优先级建议' },
+  { icon: ClipboardText, no: '02', title: '材料打磨', desc: '申报书结构、证据链与视觉统一' },
+  { icon: PresentationChart, no: '03', title: '答辩提升', desc: '路演设计、表达训练与问题库' },
+  { icon: UsersThree, no: '04', title: '整队管理', desc: '团队协作、任务拆解与进度管理' },
+  { icon: ShieldCheck, no: '05', title: '全程陪伴', desc: '从申报到落地，陪伴每一步' }
 ]
 
-const process = [
-  ['需求共识', '30 分钟深度沟通，明确项目阶段、目标赛事、团队基础、时间节点和关键风险。'],
-  ['诊断方案', '输出项目短板、提升路径、交付清单和节奏建议，先判断什么最值得做。'],
-  ['协同打磨', '策划、技术、视觉、材料、路演多角色协同推进，每个阶段都有明确交付物。'],
-  ['赛前压测', '模拟评审、问题库训练、材料终审和现场表达优化，让团队以稳定状态进入关键赛点。']
+const studentGroups = [
+  {
+    id: 'innovation',
+    label: '创新创业类',
+    title: '创新创业类竞赛',
+    desc: '适用于中国国际大学生创新大赛、三创、挑战杯、创青春、ICAN、金融科技、生命科学、服务外包等。',
+    plans: [
+      ['1199', '创意 + 计划书 + 全程指导 + 修改'],
+      ['1999', '创意 + 计划书 + PPT + 全程指导 + 修改'],
+      ['2999', '3000元内容 + 文案美化包装（10天精修）'],
+      ['3999', '3000元内容 + 文案企业包装（20天精修）', '热门'],
+      ['4999', '4000元内容 + 文案企业包装（30天精修）', '旗舰推荐'],
+      ['定制', '高校教师全程内容高质量定制（价格详细商议）']
+    ]
+  },
+  {
+    id: 'research',
+    label: '调研实践类',
+    title: '调研、实践、设计类竞赛',
+    desc: '适用于节能减排、计算机设计、人工智能挑战、智能农业装备、正大杯、统计调查、乡村振兴类竞赛。',
+    plans: [
+      ['2999', '创意 + 说明书 + PPT + 硬件（报告）+ 指导 + 修改'],
+      ['3999', '3000元内容 + 文案硬件（10天精修）', '热门'],
+      ['4999', '4000元内容 + 文案硬件（20天精修）', '旗舰推荐'],
+      ['定制', '高校教师全程高质量定制（价格详细商议）']
+    ]
+  },
+  {
+    id: 'guidance',
+    label: '综合指导',
+    title: '三下乡与整队指导',
+    desc: '适用于大挑、正大杯、统计调研、三下乡及各省市实践竞赛，兼顾个人辅导与整队陪跑。',
+    plans: [
+      ['999–1499', '学生指导：0基础创意、撰写引导、PPT制作、要点讲解、润色与技巧教学'],
+      ['2999–4999', '团队指导：教师协同、全队答疑、方案与硬件支持、研究生项目及全程指导', '团队优选']
+    ]
+  }
+]
+
+const teacherPlans = [
+  {
+    price: '3999',
+    title: '基础带队支持',
+    fit: '已有团队与材料初稿',
+    items: ['竞赛方向与选题诊断', '1次项目启动会', '团队分工与时间表搭建', '申报书结构及目录建议', '3次集中指导 + 节点答疑'],
+    delivery: '带队计划表 / 材料问题清单'
+  },
+  {
+    price: '6999',
+    title: '整队指导进阶',
+    fit: '校赛、省赛阶段项目',
+    items: ['包含基础档全部服务', '创新点与研究路径梳理', '5次整队指导会议', '申报书逐章修改建议', 'PPT逻辑与团队任务分配'],
+    delivery: '整队推进表 / 申报书修改清单'
+  },
+  {
+    price: '9999',
+    title: '高质量材料共创',
+    fit: '重点培育与高质量申报',
+    items: ['包含进阶档全部服务', '申报书深度打磨与统一', '数据逻辑、图表与证据链', 'PPT视觉与答辩叙事', '8次整队指导 + 1次模拟答辩'],
+    delivery: '高质量申报书 / PPT / 答辩提纲',
+    badge: '推荐'
+  },
+  {
+    price: '14999',
+    title: '全程带队冲刺',
+    fit: '重点项目、跨专业团队、省国赛冲刺',
+    items: ['项目全周期节点管理', '团队分工与进度督导', '选题与创新点持续优化', '10次整队指导', '申报书 / PPT / 答辩稿全链路', '2次模拟答辩与问题闭环', '专家视角评审与复盘', '重大节点快速响应'],
+    delivery: '全套申报材料 + 带队过程表 + 答辩问题库',
+    badge: '重点项目优选'
+  },
+  {
+    price: '19999',
+    title: '旗舰定制陪跑',
+    fit: '重大赛事、决赛项目、一队一策',
+    items: ['一队一策深度共创', '教师端带队方案', '学生端任务与检查清单', '12次整队指导', '高质量材料全套系统打磨', '3次模拟答辩与集中冲刺', '研究设计与成果表达优化', '决赛前复盘与应答策略'],
+    delivery: '全链路材料包 + 整队管理工具 + 决赛冲刺方案',
+    badge: '旗舰推荐'
+  }
+]
+
+const processSteps = [
+  ['需求共识', '明确赛事、项目阶段、团队基础、已有材料和关键节点。'],
+  ['项目诊断', '输出当前短板、提升路径、合作档位和交付清单。'],
+  ['协同打磨', '围绕材料、技术、视觉、分工和答辩阶段化推进。'],
+  ['赛前冲刺', '完成材料终审、模拟评审、问题库训练与表达优化。']
+]
+
+const deliveryModules = [
+  {
+    tag: '01 / DIAGNOSIS CARD',
+    title: '先判断，再投入',
+    desc: '用一次结构化诊断，把赛事、赛道、团队基础和时间节点放到同一张地图上，避免一开始就把时间花在错误环节。',
+    metric: '48h',
+    metricLabel: '完成首次项目判断',
+    items: ['赛道适配度与优先级', '团队能力与材料体检', '阶段目标与投入建议']
+  },
+  {
+    tag: '02 / MATERIAL SYSTEM',
+    title: '让材料变成证据链',
+    desc: '从计划书、数据、图表到 PPT，统一叙事逻辑、证据顺序和视觉语言，让评审可以快速理解项目价值。',
+    metric: '01',
+    metricLabel: '套材料交付系统',
+    items: ['申报书结构重构', '数据与证据链整理', 'PPT与视觉表达统一']
+  },
+  {
+    tag: '03 / DEMO & PITCH',
+    title: '把想法做成可展示',
+    desc: '把产品原型、技术 Demo 和路演表达串成一条体验路径，让项目不仅能讲清楚，还能现场被看见、被使用。',
+    metric: '3×',
+    metricLabel: '展示、路演、答辩联动',
+    items: ['产品原型与演示脚本', '路演节奏与镜头设计', '高频问题与答辩训练']
+  },
+  {
+    tag: '04 / TEAM COACHING',
+    title: '让团队按节奏推进',
+    desc: '为教师和学生提供可执行的任务拆解、节点检查和复盘机制，让整队指导从“提醒”变成可以追踪的过程。',
+    metric: '4步',
+    metricLabel: '从共识到赛前冲刺',
+    items: ['角色分工与任务看板', '周节奏与节点复盘', '模拟评审与冲刺清单']
+  }
 ]
 
 const faqs = [
-  ['你们提供保奖服务吗？', '不提供。我们提供的是专业竞赛辅导、技术支撑、材料优化和路演训练，最终结果取决于项目本身质量、赛事规则和评审结果。任何声称“保过”“保奖”的说法都需要谨慎辨别。'],
-  ['只做单项服务可以吗？', '可以。可以只做商业计划书、PPT、技术 Demo、答辩训练，也可以做从诊断到冲刺的全流程服务。'],
-  ['适合什么阶段的团队？', '从只有初步想法、已经有原型、到临近省赛国赛冲刺都可以。不同阶段重点不同：早期重方向，中期重证据，后期重表达和交付。'],
-  ['教师服务包含哪些内容？', '包含教学创新大赛、教学成果奖凝练、课题申报、论文专利、教材专著、职称材料整理和双创指导成果沉淀等方向。'],
-  ['交易怎么保障？', '坚持全程平台交易，费用、节点、交付和沟通留痕，避免口头承诺不清晰。']
+  ['服务是否承诺获奖？', '不承诺。赛事结果受到项目基础、规则变化、评审偏好和现场发挥等多重因素影响。我们提供专业指导、材料优化与整队陪跑。'],
+  ['可以只选择某一项服务吗？', '可以。学生可选择计划书、PPT、精修或综合指导；教师可按团队阶段选择五档带队方案，也可以沟通定制。'],
+  ['“修改”具体包含什么？', '默认包含3次免费微调。超过3次，或发生方向重构、内容大幅增加、整体视觉重做等较大修改，需要另行评估费用。'],
+  ['教师服务与学生服务有什么区别？', '学生服务更侧重作品和参赛表达；教师服务增加整队管理、任务拆解、过程督导、高质量材料体系与模拟答辩。'],
+  ['硬件、实验和第三方费用包含吗？', '不包含。差旅、硬件、实验、检测、专利及其他第三方支出需根据实际情况另行计算。']
 ]
 
 function useReveal() {
   useEffect(() => {
+    const revealNow = node => {
+      if (!(node instanceof Element)) return
+      const targets = node.matches?.('[data-reveal]') ? [node] : []
+      targets.push(...node.querySelectorAll?.('[data-reveal]') || [])
+      targets.forEach(target => {
+        const rect = target.getBoundingClientRect()
+        if (rect.top < window.innerHeight + 160) target.classList.add('is-visible')
+      })
+    }
     const observer = new IntersectionObserver(
-      entries => entries.forEach(entry => entry.isIntersecting && entry.target.classList.add('visible')),
-      { threshold: 0.12 }
+      entries => entries.forEach(entry => entry.isIntersecting && entry.target.classList.add('is-visible')),
+      { rootMargin: '0px 0px 180px 0px', threshold: 0.02 }
     )
-    document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el))
-    return () => observer.disconnect()
+    const observe = node => {
+      if (!(node instanceof Element)) return
+      if (node.matches?.('[data-reveal]')) observer.observe(node)
+      node.querySelectorAll?.('[data-reveal]').forEach(child => observer.observe(child))
+      revealNow(node)
+    }
+    observe(document.body)
+    const mutation = new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(observe)))
+    mutation.observe(document.body, { childList: true, subtree: true })
+    return () => {
+      observer.disconnect()
+      mutation.disconnect()
+    }
   }, [])
 }
 
-function CinematicBackdrop() {
+function DynamicBackdrop() {
+  const canvasRef = useRef(null)
+
   useEffect(() => {
-    const root = document.documentElement
+    const canvas = canvasRef.current
+    if (!canvas) return undefined
+    const context = canvas.getContext('2d', { alpha: true })
+    if (!context) return undefined
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const pointer = { x: 0.68, y: 0.28, tx: 0.68, ty: 0.28 }
+    const particles = Array.from({ length: 46 }, (_, index) => ({
+      x: (index * 0.61803398875) % 1,
+      y: (index * 0.38196601125 + 0.13) % 1,
+      radius: 0.7 + (index % 5) * 0.42,
+      speed: 0.018 + (index % 7) * 0.004,
+      depth: 0.2 + (index % 6) * 0.12
+    }))
+    let width = 0
+    let height = 0
+    let ratio = 1
     let frame = 0
-    const move = event => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        root.style.setProperty('--mx', `${(event.clientX / window.innerWidth - 0.5).toFixed(3)}`)
-        root.style.setProperty('--my', `${(event.clientY / window.innerHeight - 0.5).toFixed(3)}`)
-      })
+
+    const resize = () => {
+      width = window.innerWidth
+      height = window.innerHeight
+      ratio = Math.min(window.devicePixelRatio || 1, 1.5)
+      canvas.width = Math.round(width * ratio)
+      canvas.height = Math.round(height * ratio)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      context.setTransform(ratio, 0, 0, ratio, 0, 0)
     }
-    const scroll = () => root.style.setProperty('--sy', `${Math.min(window.scrollY / 1000, 1).toFixed(3)}`)
-    window.addEventListener('pointermove', move, { passive: true })
-    window.addEventListener('scroll', scroll, { passive: true })
-    scroll()
+
+    const updatePointer = event => {
+      pointer.tx = event.clientX / Math.max(width, 1)
+      pointer.ty = event.clientY / Math.max(height, 1)
+      document.documentElement.style.setProperty('--pointer-x', pointer.tx.toFixed(3))
+      document.documentElement.style.setProperty('--pointer-y', pointer.ty.toFixed(3))
+      document.documentElement.style.setProperty('--pointer-x-pos', `${(pointer.tx * 100).toFixed(2)}%`)
+      document.documentElement.style.setProperty('--pointer-y-pos', `${(pointer.ty * 100).toFixed(2)}%`)
+    }
+
+    const updateScroll = () => {
+      const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1)
+      const scrollRatio = Math.min(window.scrollY / scrollable, 1)
+      document.documentElement.style.setProperty('--scroll-ratio', scrollRatio.toFixed(3))
+      document.documentElement.style.setProperty('--scroll-shift', `${(-scrollRatio * 140).toFixed(1)}px`)
+    }
+
+    const draw = time => {
+      pointer.x += (pointer.tx - pointer.x) * 0.045
+      pointer.y += (pointer.ty - pointer.y) * 0.045
+      context.clearRect(0, 0, width, height)
+
+      const glow = context.createRadialGradient(
+        pointer.x * width,
+        pointer.y * height,
+        0,
+        pointer.x * width,
+        pointer.y * height,
+        Math.max(width, height) * 0.68
+      )
+      glow.addColorStop(0, 'rgba(196, 255, 46, 0.13)')
+      glow.addColorStop(0.42, 'rgba(112, 91, 255, 0.045)')
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      context.fillStyle = glow
+      context.fillRect(0, 0, width, height)
+
+      const t = time * 0.00012
+      for (let layer = 0; layer < 4; layer += 1) {
+        context.beginPath()
+        for (let x = -80; x <= width + 80; x += 42) {
+          const wave = Math.sin(x * 0.0042 + t * (1.2 + layer * 0.18) + layer * 1.35)
+          const wave2 = Math.cos(x * 0.0019 - t * 0.7 + layer)
+          const y = height * (0.18 + layer * 0.21) + wave * (34 + layer * 9) + wave2 * 24 + (pointer.y - 0.5) * 40
+          if (x === -80) context.moveTo(x, y)
+          else context.lineTo(x, y)
+        }
+        context.strokeStyle = layer % 2
+          ? `rgba(10, 10, 12, ${0.024 + layer * 0.007})`
+          : `rgba(146, 205, 0, ${0.035 + layer * 0.008})`
+        context.lineWidth = 1
+        context.stroke()
+      }
+
+      const points = particles.map(particle => ({
+        ...particle,
+        px: (((particle.x + t * particle.speed) % 1) * width) + (pointer.x - 0.5) * particle.depth * 56,
+        py: particle.y * height + Math.sin(t * 4 + particle.x * 12) * 18 + (pointer.y - 0.5) * particle.depth * 36
+      }))
+
+      points.forEach((point, index) => {
+        const next = points[(index + 7) % points.length]
+        const distance = Math.hypot(point.px - next.px, point.py - next.py)
+        if (distance < 245) {
+          context.beginPath()
+          context.moveTo(point.px, point.py)
+          context.lineTo(next.px, next.py)
+          context.strokeStyle = `rgba(18, 18, 20, ${0.05 * (1 - distance / 245)})`
+          context.stroke()
+        }
+        context.beginPath()
+        context.arc(point.px, point.py, point.radius, 0, Math.PI * 2)
+        context.fillStyle = index % 8 === 0 ? 'rgba(154, 220, 0, 0.48)' : 'rgba(18, 18, 20, 0.22)'
+        context.fill()
+      })
+
+      if (!reducedMotion) frame = window.requestAnimationFrame(draw)
+    }
+
+    resize()
+    updateScroll()
+    draw(0)
+    window.addEventListener('resize', resize)
+    window.addEventListener('pointermove', updatePointer, { passive: true })
+    window.addEventListener('scroll', updateScroll, { passive: true })
     return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('scroll', scroll)
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('resize', resize)
+      window.removeEventListener('pointermove', updatePointer)
+      window.removeEventListener('scroll', updateScroll)
     }
   }, [])
 
   return (
-    <div className="cinematic-backdrop" aria-hidden="true">
-      <div className="film-noise" />
-      <div className="stage-beam beam-one" />
-      <div className="stage-beam beam-two" />
-      <div className="halo-system">
-        <i /><i /><i />
-      </div>
-      <div className="energy-core"><i /><i /></div>
-      <div className="star-grid">{Array.from({ length: 42 }, (_, index) => <span key={index} />)}</div>
+    <div className="dynamic-backdrop" aria-hidden="true">
+      <canvas ref={canvasRef} />
+      <div className="ambient-orb ambient-orb-a" />
+      <div className="ambient-orb ambient-orb-b" />
+      <div className="ambient-grid" />
+      <div className="ambient-beam" />
+      <div className="ambient-vignette" />
     </div>
   )
 }
 
-function Header() {
+function Header({ heroTone }) {
   const [open, setOpen] = useState(false)
+  const [solid, setSolid] = useState(false)
+  const [active, setActive] = useState('top')
+  const [progress, setProgress] = useState(0)
   const navs = [
-    ['#events', '赛事覆盖'],
-    ['#services', '服务体系'],
-    ['#teacher', '教师服务'],
-    ['#cases', '成果案例'],
-    ['#process', '合作流程'],
-    ['#faq', '常见问题']
+    ['services', '服务体系'],
+    ['deliverables', '交付内容'],
+    ['student-plans', '学生报价'],
+    ['teacher-plans', '教师报价'],
+    ['process', '合作流程'],
+    ['faq', '常见问题']
   ]
+
+  useEffect(() => {
+    const update = () => {
+      setSolid(window.scrollY > 40)
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      setProgress(max > 0 ? (window.scrollY / max) * 100 : 0)
+      const ids = ['top', ...navs.map(item => item[0]), 'contact']
+      const current = [...ids].reverse().find(id => document.getElementById(id)?.getBoundingClientRect().top <= 150)
+      if (current) setActive(current)
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [])
+
   return (
-    <header className="site-header">
-      <a href="#top" className="brand">
-        <span>SRS</span>
-        <b>赛锐锶科技<small>Innovation Competition Partner</small></b>
-      </a>
-      <nav className={open ? 'open' : ''}>
-        {navs.map(([href, label]) => <a key={href} href={href} onClick={() => setOpen(false)}>{label}</a>)}
-        <a href="#contact" className="nav-cta" onClick={() => setOpen(false)}>预约诊断 <ArrowRight size={15} /></a>
-      </nav>
-      <button className="menu-button" onClick={() => setOpen(!open)} aria-label="切换菜单">{open ? <X /> : <Menu />}</button>
+    <header className={`site-header ${solid ? 'solid' : ''} ${!solid && heroTone !== 'dark' ? 'on-light-hero' : ''}`}>
+      <div className="header-progress" style={{ width: `${progress}%` }} />
+      <div className="header-cluster">
+        <a href="#top" className="brand"><span aria-hidden="true">✳</span>赛锐锶科技</a>
+        <nav className={open ? 'open' : ''}>
+          {navs.map(([id, label]) => (
+            <a className={active === id ? 'active' : ''} key={id} href={`#${id}`} onClick={() => setOpen(false)}>{label}</a>
+          ))}
+        </nav>
+      </div>
+      <div className="header-actions">
+        <a href="#contact" className="header-cta" onClick={() => setOpen(false)}>预约项目诊断 <ArrowRight /></a>
+        <button className="menu-toggle" aria-label="切换导航" onClick={() => setOpen(!open)}>{open ? <X /> : <List />}</button>
+      </div>
     </header>
   )
 }
 
-function Hero() {
+function Hero({ onToneChange }) {
+  const [index, setIndex] = useState(0)
+  const current = heroSlides[index]
+
+  useEffect(() => {
+    const timer = setInterval(() => setIndex(value => (value + 1) % heroSlides.length), 7200)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    onToneChange?.(current.tone)
+  }, [current.tone, onToneChange])
+
   return (
-    <section className="hero" id="top">
-      <div className="hero-copy">
-        <div className="hero-kicker"><Sparkles size={15} /> 8 年老店 · 年均 30+ 国奖 · 全程平台交易</div>
-        <h1><em>把好项目，</em><br /><span>打磨成真正能被看见的作品</span><small>被相信 · 被记住 · 被选择</small></h1>
-        <p>赛锐锶科技面向大学生创新创业竞赛团队与高校教师，提供从项目诊断、赛道定位、材料打磨、技术实现到路演答辩的全链路支撑。</p>
-        <div className="hero-actions">
-          <a className="primary-button" href="#contact">预约项目诊断 <ArrowRight /></a>
-          <a className="ghost-button" href="#events">查看赛事覆盖 <ChevronDown /></a>
-        </div>
-        <div className="hero-alert">
-          <ShieldAlert />
-          <span><b>重要声明</b> 不提供任何“保过 / 保奖”服务。我们提供专业辅导、技术支撑与材料优化，最终结果以赛事评审为准。</span>
-        </div>
+    <section className={`hero hero-${current.tone}`} id="top">
+      <div className="hero-signal-rail" aria-label="服务重点">
+        {[
+          ['01 / 诊断', '48h', '先判断，再投入', '赛道适配 · 团队体检'],
+          ['02 / 交付', '01', '一套材料系统', '计划书 · PPT · 证据链'],
+          ['03 / 陪跑', '4步', '按节奏推进', '共识 · 打磨 · 冲刺']
+        ].map(([tag, metric, title, desc], signalIndex) => (
+          <article key={tag} className={signalIndex === index ? 'active' : ''}>
+            <span>{tag}</span><strong>{metric}</strong><h3>{title}</h3><p>{desc}</p>
+          </article>
+        ))}
       </div>
-      <div className="hero-console">
-        <div className="console-head"><span /><span /><span /><b>SRS COMMAND CENTER</b></div>
-        <div className="console-orbit">
-          <div className="radar"><Radar /></div>
-          <div className="orbit-card card-a"><b>项目诊断</b><small>Evidence Chain</small></div>
-          <div className="orbit-card card-b"><b>技术 Demo</b><small>Product Proof</small></div>
-          <div className="orbit-card card-c"><b>路演答辩</b><small>Pitch System</small></div>
-        </div>
-        <div className="console-panel">
-          <div><small>PROJECT READINESS</small><strong>86%</strong></div>
-          <div><small>NEXT ACTION</small><strong>补齐证据闭环</strong></div>
+      <div className="hero-copy" key={index}>
+        <span>{current.eyebrow}</span>
+        <h1>{current.title.split('\n').map((line, lineIndex) => <React.Fragment key={line}>{line}{lineIndex === 0 && <br />}</React.Fragment>)}</h1>
+        <p>{current.desc}</p>
+        <a href={current.href}>{current.cta}<ArrowRight /></a>
+        <div className="hero-style-tabs" aria-label="切换首页风格">
+          {heroSlides.map((slide, slideIndex) => (
+            <button key={slide.styleName} className={slideIndex === index ? 'active' : ''} onClick={() => setIndex(slideIndex)}>
+              <small>0{slideIndex + 1}</small>{slide.styleName}
+            </button>
+          ))}
         </div>
       </div>
     </section>
   )
 }
 
-function Metrics() {
+function Showcase() {
+  const [audience, setAudience] = useState('student')
   return (
-    <section className="metric-band">
-      {metrics.map(item => (
-        <div key={item.label} data-reveal>
-          <strong>{item.value}<sup>{item.suffix}</sup></strong>
-          <span>{item.label}</span>
-        </div>
-      ))}
-    </section>
-  )
-}
-
-function SectionTitle({ eyebrow, title, desc, light }) {
-  return (
-    <div className={`section-title ${light ? 'light' : ''}`} data-reveal>
-      <span>{eyebrow}</span>
-      <h2>{title}</h2>
-      {desc && <p>{desc}</p>}
-    </div>
-  )
-}
-
-function Events() {
-  const [active, setActive] = useState(eventTabs[0].id)
-  const current = eventTabs.find(item => item.id === active)
-  return (
-    <section className="section events" id="events">
-      <SectionTitle
-        eyebrow="01 / COMPETITION MAP"
-        title="覆盖主流双创与成长类竞赛场景"
-        desc="不把所有赛事当成同一种材料处理。我们根据赛事规则、评审偏好和项目阶段，重组最适合的参赛策略。"
-      />
-      <div className="event-shell" data-reveal>
-        <div className="event-tabs">
-          {eventTabs.map(item => <button key={item.id} className={active === item.id ? 'active' : ''} onClick={() => setActive(item.id)}>{item.name}</button>)}
-        </div>
-        <div className="event-panel" key={current.id}>
-          <div>
-            <span>{current.tag}</span>
-            <h3>{current.title}</h3>
-            <p>{current.desc}</p>
-          </div>
-          <ul>{current.points.map(point => <li key={point}><Check />{point}</li>)}</ul>
-        </div>
+    <section className="showcase" id="showcase">
+      <div className="audience-tabs" data-reveal>
+        <button className={audience === 'student' ? 'active' : ''} onClick={() => setAudience('student')}>面向学生团队</button>
+        <button className={audience === 'teacher' ? 'active' : ''} onClick={() => setAudience('teacher')}>面向高校教师</button>
+      </div>
+      <div className="product-grid">
+        {productStories.map((item, index) => (
+          <article className={`product-story ${item.tone}`} key={item.no} data-reveal style={{ '--delay': `${index * 90}ms` }}>
+            <div className="product-copy">
+              <span>{item.no}</span>
+              <h2>{item.title}</h2>
+              <p>{item.desc}</p>
+              <strong>{item.price}<small>{item.suffix}</small></strong>
+              <a href={item.href}>查看完整方案 <ArrowRight /></a>
+            </div>
+            <img src={item.image} alt="" />
+          </article>
+        ))}
+      </div>
+      <div className="service-strip">
+        {serviceItems.map(({ icon: Icon, no, title, desc }) => (
+          <div key={no}><Icon weight="light" /><span><b>{title}</b><small>{desc}</small></span></div>
+        ))}
       </div>
     </section>
   )
@@ -257,20 +519,24 @@ function Events() {
 
 function Services() {
   return (
-    <section className="section services" id="services">
-      <SectionTitle
-        eyebrow="02 / SERVICE SYSTEM"
-        title="内容、技术、视觉、表达一起打磨"
-        desc="真正影响结果的不是单份材料，而是项目逻辑、证据链、技术可见度和现场表达共同形成的系统能力。"
-        light
-      />
-      <div className="service-grid">
-        {services.map(({ icon: Icon, no, title, desc, tags }) => (
-          <article className="service-card" key={no} data-reveal>
-            <div className="service-top"><Icon /><span>{no}</span></div>
-            <h3>{title}</h3>
-            <p>{desc}</p>
-            <div>{tags.map(tag => <b key={tag}>{tag}</b>)}</div>
+    <section className="services" id="services">
+      <div className="section-heading dark" data-reveal>
+        <span>01 / SERVICE SYSTEM</span>
+        <h2>不是堆材料，<br />而是建立一套可交付的方法。</h2>
+        <p>每个关键节点都对应明确的任务、成果和下一步，让学生作品质量与教师带队效率同时提升。</p>
+      </div>
+      <div className="service-editorial">
+        {[
+          ['项目诊断与赛道定位', '判断什么最值得做，明确选题、赛道、资源与时间优先级。', Compass],
+          ['申报书与高质量材料', '重构项目逻辑、研究路径、证据链、市场表达与成果价值。', FileText],
+          ['技术原型与演示系统', '补齐可体验、可展示、可持续迭代的产品或技术 Demo。', Stack],
+          ['路演 PPT 与答辩训练', '统一故事线、视觉表达、答辩话术与高频问题应答。', PresentationChart]
+        ].map(([title, desc, Icon], index) => (
+          <article key={title} data-reveal>
+            <span>0{index + 1}</span>
+            <Icon weight="light" />
+            <div><h3>{title}</h3><p>{desc}</p></div>
+            <ArrowRight />
           </article>
         ))}
       </div>
@@ -278,57 +544,116 @@ function Services() {
   )
 }
 
-function Teacher() {
-  const items = [
-    ['教学创新大赛', '课程痛点、教学方法、育人成效、推广价值的系统化表达。'],
-    ['教学成果奖凝练', '从材料堆叠转向成果机制、实践路径和可复制经验。'],
-    ['课题 / 论文 / 专利', '围绕教师长期发展目标，梳理成果积累与申报节奏。'],
-    ['职称材料支持', '整合教学、科研、竞赛指导和社会服务成果，提升材料清晰度。']
-  ]
+function DeliveryMatrix() {
+  const [active, setActive] = useState(0)
+  const module = deliveryModules[active]
   return (
-    <section className="section teacher" id="teacher">
-      <SectionTitle
-        eyebrow="03 / FOR EDUCATORS"
-        title="面向高校教师的专业提升服务"
-        desc="除了学生竞赛，我们也为教师提供教学创新、成果凝练、课题申报、论文专利与职称材料等方向的专业支撑。"
-      />
-      <div className="teacher-layout">
-        <div className="teacher-visual" data-reveal>
-          <BrainCircuit />
-          <h3>从一次参赛支持，到一套可持续复用的教师成果体系</h3>
-          <p>把竞赛指导、课程建设、项目孵化和科研成果连接起来，形成更完整的成长路径。</p>
+    <section className="delivery-matrix" id="deliverables">
+      <div className="section-heading" data-reveal>
+        <span>02 / DELIVERY MAP</span>
+        <h2>把服务拆成可看见的交付。</h2>
+        <p>不同项目需要不同的推进方式。你可以先选择最需要解决的环节，再决定是否进入完整合作。</p>
+      </div>
+      <div className="delivery-map" data-reveal>
+        <div className="delivery-tabs" role="tablist" aria-label="交付内容分类">
+          {deliveryModules.map((item, index) => (
+            <button key={item.tag} className={active === index ? 'active' : ''} onClick={() => setActive(index)} aria-pressed={active === index}>
+              <small>0{index + 1}</small><span>{item.title}</span>
+            </button>
+          ))}
         </div>
-        <div className="teacher-list">
-          {items.map(([title, desc], index) => <div key={title} data-reveal><span>0{index + 1}</span><b>{title}</b><p>{desc}</p></div>)}
-        </div>
+        <article className="delivery-stage" key={module.tag}>
+          <div className="delivery-stage-top"><span>{module.tag}</span><strong>{module.metric}<small>{module.metricLabel}</small></strong></div>
+          <h3>{module.title}</h3>
+          <p>{module.desc}</p>
+          <div className="delivery-list">{module.items.map((item, index) => <span key={item}><b>0{index + 1}</b>{item}</span>)}</div>
+          <a href="#contact">咨询这个模块 <ArrowRight /></a>
+        </article>
+      </div>
+      <div className="coverage-strip" data-reveal>
+        <span>适用场景</span>
+        {['创新创业类', '调研实践类', '挑战杯', '互联网+ / 国创赛', '高校整队', '决赛冲刺'].map(item => <b key={item}>{item}</b>)}
       </div>
     </section>
   )
 }
 
-function Cases() {
+function StudentPricing() {
   const [active, setActive] = useState(0)
-  const current = cases[active]
+  const [selected, setSelected] = useState('3999')
+  const group = studentGroups[active]
   return (
-    <section className="section cases" id="cases">
-      <SectionTitle
-        eyebrow="04 / SELECTED OUTCOMES"
-        title="用脱敏案例，展示项目如何被重新点亮"
-        desc="案例不展示客户隐私，只呈现方法和变化。正式合作沟通后，可根据情况核验相关证明材料。"
-        light
-      />
-      <div className="case-stage" data-reveal>
-        <div className="case-nav">
-          {cases.map((item, index) => <button key={item.title} className={active === index ? 'active' : ''} onClick={() => setActive(index)}><span>0{index + 1}</span>{item.title}</button>)}
+    <section className="student-pricing pricing-section" id="student-plans">
+      <div className="section-heading" data-reveal>
+        <span>03 / STUDENT PRICING</span>
+        <h2>面向学生的竞赛优惠报价</h2>
+        <p>先判断项目基础，再选择合适档位。价格与服务内容逐项对齐，避免无效投入。</p>
+      </div>
+      <div className="student-pricing-shell" data-reveal>
+        <div className="pricing-tabs">
+          {studentGroups.map((item, index) => (
+            <button key={item.id} className={active === index ? 'active' : ''} onClick={() => { setActive(index); setSelected(item.plans[0][0]) }}>
+              <small>0{index + 1}</small>{item.label}
+            </button>
+          ))}
         </div>
-        <div className="case-main" key={current.title}>
-          <span>{current.award}</span>
-          <h3>{current.title}</h3>
-          <p>{current.desc}</p>
-          <strong>{current.stat}</strong>
-          <small>关键指标 / 价值感知提升</small>
+        <div className="student-pricing-content" key={group.id}>
+          <div className="pricing-intro">
+            <span>{group.label}</span>
+            <h3>{group.title}</h3>
+            <p>{group.desc}</p>
+            <div><GraduationCap weight="light" /><b>学生优惠方案</b><small>按项目阶段灵活选择</small></div>
+          </div>
+          <div className="student-plan-list">
+            {group.plans.map(([price, desc, badge]) => (
+              <button key={`${price}-${desc}`} className={selected === price ? 'selected' : ''} onClick={() => setSelected(price)} aria-pressed={selected === price}>
+                <strong>{price === '定制' ? price : `¥${price}`}</strong>
+                <span>{desc}</span>
+                {badge && <b>{badge}</b>}
+                <i><Check weight="bold" /></i>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+      <div className="notice" data-reveal><ShieldCheck weight="light" /><p><b>学生服务须知：</b>“修改”代表免费微调3次；超过3次或修改幅度较大需额外付费。竞赛结果受多种因素影响，不承诺获奖。</p></div>
+    </section>
+  )
+}
+
+function TeacherPricing() {
+  const [active, setActive] = useState(2)
+  const plan = teacherPlans[active]
+  return (
+    <section className="teacher-pricing pricing-section" id="teacher-plans">
+      <div className="section-heading dark" data-reveal>
+        <span>04 / TEACHER COACHING</span>
+        <h2>高校教师竞赛带队服务方案</h2>
+        <p>以带队管理、整队指导和高质量材料为核心，提供五档可落地的服务模式。</p>
+      </div>
+      <div className="teacher-price-nav" data-reveal>
+        {teacherPlans.map((item, index) => (
+          <button key={item.price} className={active === index ? 'active' : ''} onClick={() => setActive(index)}>
+            <small>0{index + 1}</small><span>¥{item.price}</span><b>{item.title}</b>
+          </button>
+        ))}
+      </div>
+      <div className="teacher-detail" key={plan.price}>
+        <div className="teacher-visual">
+          <img src="/assets/flagship/product-teacher.png" alt="" />
+          <span>单支队伍 · 默认线上服务</span>
+        </div>
+        <div className="teacher-detail-copy">
+          <div className="teacher-detail-head">
+            <div><span>{plan.badge || '带队服务'}</span><h3>{plan.title}</h3><p>适合：{plan.fit}</p></div>
+            <strong>¥{plan.price}</strong>
+          </div>
+          <ul>{plan.items.map(item => <li key={item}><Check weight="bold" />{item}</li>)}</ul>
+          <div className="delivery"><Books weight="light" /><span><small>核心交付</small><b>{plan.delivery}</b></span></div>
+          <a href="#contact">咨询该方案 <ArrowRight /></a>
+        </div>
+      </div>
+      <div className="notice dark-notice" data-reveal><ShieldCheck weight="light" /><p><b>教师服务须知：</b>报价为单支队伍，默认线上服务；差旅、硬件、实验、检测、专利等第三方费用另计。材料修改含3次免费微调。</p></div>
     </section>
   )
 }
@@ -336,38 +661,24 @@ function Cases() {
 function Process() {
   const [active, setActive] = useState(0)
   return (
-    <section className="section process" id="process">
-      <SectionTitle
-        eyebrow="05 / WORKFLOW"
-        title="流程清晰，节点透明，交付可追踪"
-        desc="我们更重视过程的确定性：先诊断，再方案，再执行，再冲刺。每一步都让团队知道为什么做、做什么、做到什么程度。"
-      />
-      <div className="process-grid" data-reveal>
-        <div className="process-nav">
-          {process.map(([title], index) => <button key={title} className={active === index ? 'active' : ''} onClick={() => setActive(index)}><span>0{index + 1}</span>{title}</button>)}
-        </div>
-        <div className="process-view" key={active}>
-          <Zap />
-          <span>STEP 0{active + 1}</span>
-          <h3>{process[active][0]}</h3>
-          <p>{process[active][1]}</p>
-        </div>
+    <section className="process" id="process">
+      <div className="section-heading" data-reveal>
+        <span>05 / WORKFLOW</span>
+        <h2>四步，把复杂备赛变得清晰。</h2>
       </div>
-    </section>
-  )
-}
-
-function Brands() {
-  const brands = [
-    ['大锤的小铺', '面向学生团队的竞赛咨询、材料优化、项目陪跑和沟通窗口。'],
-    ['锤音科技有限公司', '承接技术研发、系统搭建、原型 Demo 与产品化支撑。'],
-    ['锤音专业技术服务中心', '面向教师与专业技术需求的成果凝练、材料输出与提升服务。']
-  ]
-  return (
-    <section className="section brands">
-      <SectionTitle eyebrow="06 / BRAND MATRIX" title="多品牌协同，覆盖完整服务链路" light />
-      <div className="brand-grid">
-        {brands.map(([title, desc]) => <article key={title} data-reveal><span>{title.slice(0, 2)}</span><h3>{title}</h3><p>{desc}</p></article>)}
+      <div className="process-layout">
+        <div className="process-nav" data-reveal>
+          {processSteps.map(([title], index) => (
+            <button key={title} className={active === index ? 'active' : ''} onClick={() => setActive(index)}><small>0{index + 1}</small>{title}</button>
+          ))}
+        </div>
+        <div className="process-stage" key={active}>
+          <span>STEP 0{active + 1}</span>
+          <h3>{processSteps[active][0]}</h3>
+          <p>{processSteps[active][1]}</p>
+          <div className="process-meter"><i style={{ width: `${((active + 1) / processSteps.length) * 100}%` }} /></div>
+          <TrendUp weight="light" />
+        </div>
       </div>
     </section>
   )
@@ -375,10 +686,18 @@ function Brands() {
 
 function Faq() {
   return (
-    <section className="section faq" id="faq">
-      <SectionTitle eyebrow="07 / FAQ" title="合作前，先把关键问题说清楚" />
+    <section className="faq" id="faq">
+      <div className="section-heading" data-reveal>
+        <span>06 / FAQ</span>
+        <h2>合作前，先把关键问题说清楚。</h2>
+      </div>
       <div className="faq-list">
-        {faqs.map(([question, answer]) => <details key={question} data-reveal><summary>{question}</summary><p>{answer}</p></details>)}
+        {faqs.map(([question, answer], index) => (
+          <details key={question} data-reveal>
+            <summary><span>0{index + 1}</span>{question}<i>+</i></summary>
+            <p>{answer}</p>
+          </details>
+        ))}
       </div>
     </section>
   )
@@ -408,16 +727,22 @@ function Contact() {
       setLoading(false)
     }
   }
-
   return (
     <section className="contact" id="contact">
       <div className="contact-copy" data-reveal>
-        <span>LET'S START</span>
-        <h2>把你的项目阶段告诉我们，先做一次专业判断。</h2>
-        <p>你可以留下目标赛事、项目方向、当前材料情况和时间节点。我们会先判断最值得提升的地方，再给出适合的合作路径。</p>
-        <div className="contact-cards">
-          <div><MessageCircle /><b>微信</b><span>dachui0612</span></div>
-          <div><ShieldCheck /><b>交易保障</b><span>全程走平台</span></div>
+        <span>START A PROJECT</span>
+        <h2>先做一次专业判断，<br />再决定怎么投入。</h2>
+        <p>留下目标赛事、团队身份、已有材料和时间节点，我们会先判断适合的服务档位，再给出合作建议。</p>
+        <div className="contact-handle"><ChatCircleDots weight="light" /><span><small>微信咨询</small><b>dachui0612</b></span></div>
+        <div className="contact-qr-grid" data-reveal>
+          <div className="contact-qr-card">
+            <div className="contact-qr-frame"><img src="/assets/contact/wechat-personal.png" alt="个人微信二维码" /></div>
+            <span><small>个人微信</small><b>添加大锤老师</b></span>
+          </div>
+          <div className="contact-qr-card">
+            <div className="contact-qr-frame"><img src="/assets/contact/wechat-enterprise.png" alt="企业微信二维码" /></div>
+            <span><small>企业微信</small><b>赛锐锶科技</b></span>
+          </div>
         </div>
       </div>
       <form onSubmit={submit} data-reveal>
@@ -427,9 +752,10 @@ function Contact() {
         </div>
         <label><span>称呼</span><input name="name" required placeholder="姓名 / 团队名称" /></label>
         <label><span>联系方式</span><input name="contact" required placeholder="手机 / 微信 / 邮箱" /></label>
-        <label><span>需求简介</span><textarea name="need" required rows="5" placeholder="目标赛事、项目阶段、已有材料、希望解决的问题..." /></label>
-        <button disabled={loading}>{loading ? '正在提交...' : '提交需求'}<ArrowRight /></button>
-        {status && <p className="form-status"><Check />{status}</p>}
+        <label><span>需求简介</span><textarea name="need" required rows="5" placeholder="目标赛事、项目阶段、已有材料、希望解决的问题……" /></label>
+        <input type="hidden" name="source" value="官网旗舰版" />
+        <button disabled={loading}>{loading ? '正在提交…' : '提交需求'}<PaperPlaneTilt weight="fill" /></button>
+        {status && <p className="form-status"><Check weight="bold" />{status}</p>}
       </form>
     </section>
   )
@@ -437,33 +763,69 @@ function Contact() {
 
 function Chat() {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState([{ role: 'bot', text: '你好，我是赛锐锶项目顾问助手。可以问我：合作流程、服务内容、技术 Demo、教师服务、联系方式。' }])
+  const [messages, setMessages] = useState([{ role: 'bot', text: '你好，我是赛锐锶项目顾问助手。可以问我学生报价、教师带队方案、合作流程或联系方式。' }])
   const [input, setInput] = useState('')
+  const sessionRef = useRef('')
+  const sessionPromiseRef = useRef(null)
   const replies = useMemo(() => [
-    [['合作', '流程'], '合作一般分四步：需求沟通、项目诊断、方案共创、赛前冲刺。我们会按阶段明确交付物和时间节点。'],
-    [['服务', '内容'], '核心服务包括项目诊断、赛道定位、商业计划书、申报材料、技术 Demo、路演 PPT、答辩训练和教师成果服务。'],
-    [['技术', 'demo', '系统'], '可以做 Web 官网、App 原型、小程序、数据看板、后台系统和可演示 Demo，重点是提升项目可信度。'],
-    [['教师', '职称', '教学'], '教师服务包含教学创新大赛、教学成果奖、课题申报、论文专利、教材专著、职称材料整理等方向。'],
-    [['联系', '微信', '电话'], '推荐先加微信：dachui0612。也可以在页面底部提交需求表单。']
+    [['学生', '报价'], '学生服务从1199元起，分为创新创业、调研实践和综合指导三类。'],
+    [['教师', '带队'], '教师带队服务为3999—19999元，覆盖项目诊断、整队管理、高质量材料、模拟答辩和全程陪跑。'],
+    [['流程', '合作'], '合作分为需求共识、项目诊断、协同打磨和赛前冲刺四步。'],
+    [['联系', '微信'], '微信：dachui0612。也可以直接提交页面底部的需求表单。']
   ], [])
-  const send = text => {
+  const ensureSession = async () => {
+    if (sessionRef.current) return sessionRef.current
+    if (!sessionPromiseRef.current) {
+      sessionPromiseRef.current = fetch('/api/chat/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: '官网右下角项目顾问', page: window.location.pathname })
+      })
+        .then(response => response.json().then(data => (response.ok ? data.session?.id : '')))
+        .then(id => {
+          if (id) sessionRef.current = id
+          return id || ''
+        })
+        .catch(() => '')
+        .finally(() => { sessionPromiseRef.current = null })
+    }
+    return sessionPromiseRef.current
+  }
+  const saveMessage = async (sessionId, role, text, quick = false) => {
+    if (!sessionId) return
+    try {
+      await fetch(`/api/chat/sessions/${sessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, text, quick })
+      })
+    } catch {
+      // 不阻塞访客继续咨询。
+    }
+  }
+  const send = async (text, quick = false) => {
     const value = text || input.trim()
     if (!value) return
     setMessages(prev => [...prev, { role: 'user', text: value }])
     setInput('')
-    const hit = replies.find(([keys]) => keys.some(key => value.toLowerCase().includes(key)))
-    setTimeout(() => setMessages(prev => [...prev, { role: 'bot', text: hit ? hit[1] : '收到。建议你补充目标赛事、项目方向和当前阶段，我可以帮你判断优先要打磨哪里。' }]), 260)
+    const sessionId = await ensureSession()
+    saveMessage(sessionId, 'user', value, quick)
+    const hit = replies.find(([keys]) => keys.some(key => value.includes(key)))
+    const reply = hit ? hit[1] : '收到。建议补充目标赛事、团队身份、当前材料和时间节点，我可以帮你判断优先选择哪一档。'
+    setTimeout(() => {
+      setMessages(prev => [...prev, { role: 'bot', text: reply }])
+      saveMessage(sessionId, 'bot', reply)
+    }, 220)
   }
-
   return (
     <div className={`chat ${open ? 'open' : ''}`}>
       <div className="chat-panel">
-        <div className="chat-head"><b>智能顾问</b><button onClick={() => setOpen(false)}><X size={16} /></button></div>
+        <div className="chat-head"><b>项目顾问</b><button aria-label="关闭顾问" onClick={() => setOpen(false)}><X /></button></div>
         <div className="chat-body">{messages.map((item, index) => <p key={index} className={item.role}>{item.text}</p>)}</div>
-        <div className="chat-quick">{['合作流程', '技术 Demo', '教师服务'].map(item => <button key={item} onClick={() => send(item)}>{item}</button>)}</div>
-        <div className="chat-input"><input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="输入你的问题..." /><button onClick={() => send()}><ArrowRight size={16} /></button></div>
+        <div className="chat-quick">{['学生报价', '教师带队', '合作流程'].map(item => <button key={item} onClick={() => send(item, true)}>{item}</button>)}</div>
+        <div className="chat-input"><input value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => event.key === 'Enter' && send()} placeholder="输入你的问题…" /><button aria-label="发送问题" onClick={() => send()}><ArrowRight /></button></div>
       </div>
-      <button className="chat-button" onClick={() => setOpen(!open)}>{open ? <X /> : <MessageCircle />}</button>
+      <button className="chat-button" aria-label="打开智能顾问" onClick={() => setOpen(!open)}>{open ? <X /> : <ChatCircleDots weight="light" />}</button>
     </div>
   )
 }
@@ -471,28 +833,28 @@ function Chat() {
 function Footer() {
   return (
     <footer>
-      <div className="footer-brand"><span>SRS</span><b>赛锐锶科技</b></div>
-      <p>旗下品牌：大锤的小铺 · 锤音科技有限公司 · 锤音专业技术服务中心</p>
-      <p>© 2026 赛锐锶科技. All rights reserved. 备案号待上线后替换。</p>
+      <b>赛锐锶科技</b>
+      <p>大学生创新创业竞赛 · 高校教师带队 · 高质量材料 · 技术 Demo · 路演答辩</p>
+      <span>© 2027 赛锐锶科技。网站报价与最终服务内容以双方确认的项目清单为准。</span>
     </footer>
   )
 }
 
 function App() {
   useReveal()
+  const [heroTone, setHeroTone] = useState(heroSlides[0].tone)
   return (
     <>
-      <CinematicBackdrop />
-      <Header />
+      <DynamicBackdrop />
+      <Header heroTone={heroTone} />
       <main>
-        <Hero />
-        <Metrics />
-        <Events />
+        <Hero onToneChange={setHeroTone} />
+        <Showcase />
         <Services />
-        <Teacher />
-        <Cases />
+        <DeliveryMatrix />
+        <StudentPricing />
+        <TeacherPricing />
         <Process />
-        <Brands />
         <Faq />
         <Contact />
       </main>

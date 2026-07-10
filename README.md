@@ -27,7 +27,16 @@ pnpm build
 pnpm start
 ```
 
-构建后访问 `http://localhost:3001`。咨询表单会写入 `backend/data/leads.json`，正式部署建议将该目录挂载为持久化磁盘，或替换为 MySQL/PostgreSQL。
+构建后访问 `http://localhost:3001`。咨询表单会写入 `backend/data/leads.json`，右下角项目顾问的会话与消息会写入 `backend/data/chats.json`；后台管理页为 `http://localhost:3001/admin`，使用 `ADMIN_TOKEN` 登录即可查看线索和对话。正式部署建议将该目录挂载为持久化磁盘，或替换为 MySQL/PostgreSQL。
+
+当前 `.env` 已将线索接收邮箱设为 `1760772194@qq.com`，QQ SMTP 服务器也已预设。要真正发出邮件，只需在 `.env` 的 `SMTP_PASS` 填写 QQ 邮箱后台生成的 SMTP 授权码（不是邮箱登录密码），然后重启服务。
+
+已接入的后台接口：
+
+- `POST /api/leads`：保存官网需求表单，并按 SMTP 配置尝试发送邮件。
+- `POST /api/chat/sessions`：创建项目顾问会话。
+- `POST /api/chat/sessions/:id/messages`：保存访客或顾问消息。
+- `GET /api/admin/leads`、`GET /api/admin/chats`：携带 `Authorization: Bearer <ADMIN_TOKEN>` 查看后台数据。
 
 ## 部署建议
 
