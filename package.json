@@ -2,6 +2,7 @@
   "name": "sairuisi-official-site",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "pnpm@10.12.4",
   "scripts": {
     "dev": "concurrently -n WEB,API -c blue,magenta \"pnpm --dir frontend dev\" \"pnpm --dir backend dev\"",
     "build": "pnpm --dir frontend build",
