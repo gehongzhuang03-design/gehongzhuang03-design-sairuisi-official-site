@@ -18,6 +18,7 @@ const webDist = path.resolve(__dirname, '..', 'frontend', 'dist')
 
 const adminToken = process.env.ADMIN_TOKEN || 'srs-admin-2026'
 const emailTo = process.env.LEAD_EMAIL_TO || '1760772194@qq.com'
+const notificationMode = process.env.NOTIFICATION_MODE || (process.env.RENDER_DEPLOYMENT === 'render' ? 'github-actions' : 'smtp')
 
 app.use(helmet({ contentSecurityPolicy: false }))
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || true }))
@@ -104,6 +105,7 @@ function getClientIp(req) {
 }
 
 function getTransporter() {
+  if (notificationMode === 'github-actions') return null
   const host = process.env.SMTP_HOST
   const user = process.env.SMTP_USER
   const pass = process.env.SMTP_PASS
@@ -138,6 +140,7 @@ function renderLeadEmail(lead) {
 }
 
 async function sendLeadMail(lead) {
+  if (notificationMode === 'github-actions') return { sent: false, reason: 'AWAITING_GITHUB_ACTIONS' }
   const transporter = getTransporter()
   if (!transporter) return { sent: false, reason: 'SMTP_NOT_CONFIGURED' }
 
@@ -154,6 +157,7 @@ async function sendLeadMail(lead) {
 }
 
 async function sendChatMail(session, message) {
+  if (notificationMode === 'github-actions') return { sent: false, reason: 'AWAITING_GITHUB_ACTIONS' }
   const transporter = getTransporter()
   if (!transporter) return { sent: false, reason: 'SMTP_NOT_CONFIGURED' }
 
@@ -230,13 +234,15 @@ async function load(){
     document.getElementById('sections').innerHTML=site.sections.map(item=>'<div class="section-row"><b>'+esc(item.name)+'</b><span>'+esc(item.summary)+'</span></div>').join('')
     renderLeads(leadsData.leads)
     renderChats(chatsData.chats)
-    document.getElementById('mailState').innerHTML='邮件接收：${emailTo} · SMTP：'+(leadsData.smtpConfigured?'<span class="ok">已配置</span>':'<span class="warn">未配置，仅保存线索</span>')
+    const mailMode=leadsData.notificationMode==='github-actions'?'GitHub Actions 邮件中继（约5分钟同步）':(leadsData.smtpConfigured?'SMTP 直连':'仅保存线索')
+    document.getElementById('mailState').innerHTML='邮件接收：${emailTo} · 通知方式：<span class="ok">'+esc(mailMode)+'</span>'
   }catch(error){document.getElementById('leads').innerHTML='<div class="empty bad">'+esc(error.message)+'</div>'}
 }
 function renderLeads(leads){
   if(!leads.length){document.getElementById('leads').innerHTML='<div class="empty">暂无线索</div>';return}
   document.getElementById('leads').innerHTML='<table><thead><tr><th>时间</th><th>称呼</th><th>身份</th><th>联系方式</th><th>需求</th><th>邮件</th></tr></thead><tbody>'+leads.map(lead=>{
-    const mail=lead.email?.sent?'<span class="ok">已发送</span>':('<span class="warn">'+esc(lead.email?.reason||'未发送')+'</span>')
+    const reasons={QUEUED:'排队中',AWAITING_GITHUB_ACTIONS:'等待邮件同步',ESOCKET:'邮件通道受限',SMTP_NOT_CONFIGURED:'邮件服务未配置'}
+    const mail=lead.email?.sent?'<span class="ok">已发送</span>':('<span class="warn">'+esc(reasons[lead.email?.reason]||lead.email?.reason||'未发送')+'</span>')
     return '<tr><td>'+esc(new Date(lead.createdAt).toLocaleString())+'</td><td>'+esc(lead.name)+'</td><td>'+esc(lead.role||'未填')+'</td><td>'+esc(lead.contact)+'</td><td class="need">'+esc(lead.need)+'</td><td>'+mail+'</td></tr>'
   }).join('')+'</tbody></table>'
 }
@@ -371,12 +377,49 @@ app.post('/api/chat/sessions/:id/messages', async (req, res) => {
 
 app.get('/api/admin/leads', requireAdmin, async (_req, res) => {
   const leads = await readLeads()
-  res.json({ ok: true, smtpConfigured: Boolean(getTransporter()), emailTo, leads: leads.slice().reverse() })
+  res.json({ ok: true, smtpConfigured: Boolean(getTransporter()), notificationMode, emailTo, leads: leads.slice().reverse() })
 })
 
 app.get('/api/admin/chats', requireAdmin, async (_req, res) => {
   const chats = await readChats()
   res.json({ ok: true, chats: chats.slice().sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt))).slice(0, 200) })
+})
+
+app.post('/api/admin/notifications/mark', requireAdmin, async (req, res) => {
+  const type = String(req.body?.type || '')
+  const id = String(req.body?.id || '')
+  const sessionId = String(req.body?.sessionId || '')
+  const email = {
+    sent: Boolean(req.body?.sent),
+    reason: String(req.body?.reason || (req.body?.sent ? 'SENT' : 'MAIL_SEND_FAILED')).slice(0, 160),
+    provider: String(req.body?.provider || 'github-actions-smtp').slice(0, 80),
+    updatedAt: new Date().toISOString()
+  }
+
+  let found = false
+  if (type === 'lead') {
+    await mutateLeads(leads => {
+      const lead = leads.find(item => item.id === id)
+      if (lead) {
+        lead.email = email
+        found = true
+      }
+    })
+  } else if (type === 'chat') {
+    await mutateChats(chats => {
+      const session = chats.find(item => item.id === sessionId)
+      const message = session?.messages?.find(item => item.id === id)
+      if (message) {
+        message.email = email
+        found = true
+      }
+    })
+  } else {
+    return res.status(400).json({ ok: false, message: '通知类型无效。' })
+  }
+
+  if (!found) return res.status(404).json({ ok: false, message: '待更新的通知记录不存在。' })
+  res.json({ ok: true, email })
 })
 
 app.get('/admin', (_req, res) => res.type('html').send(adminPage()))
