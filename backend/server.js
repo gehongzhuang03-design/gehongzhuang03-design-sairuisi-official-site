@@ -291,7 +291,7 @@ app.post('/api/leads', async (req, res) => {
   res.status(201).json({
     ok: true,
     id: lead.id,
-    emailQueued: Boolean(getTransporter()),
+    emailQueued: notificationMode === 'github-actions' || Boolean(getTransporter()),
     message: '需求已收到，我们会尽快联系。'
   })
 
@@ -353,7 +353,7 @@ app.post('/api/chat/sessions/:id/messages', async (req, res) => {
 
   res.status(201).json({
     ok: true,
-    emailQueued: role === 'user' && Boolean(getTransporter()),
+    emailQueued: role === 'user' && (notificationMode === 'github-actions' || Boolean(getTransporter())),
     message: { id: message.id, createdAt: message.createdAt }
   })
 
