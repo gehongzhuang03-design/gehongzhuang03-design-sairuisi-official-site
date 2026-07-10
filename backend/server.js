@@ -56,6 +56,18 @@ async function writeLeads(leads) {
   await fs.writeFile(dataFile, JSON.stringify(leads, null, 2), 'utf8')
 }
 
+let leadMutationQueue = Promise.resolve()
+function mutateLeads(mutator) {
+  const task = leadMutationQueue.then(async () => {
+    const leads = await readLeads()
+    const result = await mutator(leads)
+    await writeLeads(leads)
+    return result
+  })
+  leadMutationQueue = task.catch(() => {})
+  return task
+}
+
 async function readChats() {
   try {
     const raw = await fs.readFile(chatsFile, 'utf8')
@@ -101,7 +113,10 @@ function getTransporter() {
     host,
     port: Number(process.env.SMTP_PORT || 465),
     secure: String(process.env.SMTP_SECURE || 'true') !== 'false',
-    auth: { user, pass }
+    auth: { user, pass },
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 12000
   })
 }
 
@@ -253,7 +268,6 @@ app.post('/api/leads', async (req, res) => {
     return res.status(400).json({ ok: false, message: '请完整填写称呼、联系方式和需求。' })
   }
 
-  const leads = await readLeads()
   const lead = {
     id: crypto.randomUUID(),
     name,
@@ -263,28 +277,30 @@ app.post('/api/leads', async (req, res) => {
     source,
     ip: getClientIp(req),
     createdAt: new Date().toISOString(),
-    email: { sent: false, reason: 'PENDING' }
+    email: { sent: false, reason: 'QUEUED' }
   }
 
-  leads.push(lead)
-  await writeLeads(leads)
-
-  try {
-    lead.email = await sendLeadMail(lead)
-  } catch (error) {
-    lead.email = { sent: false, reason: error.message || 'MAIL_SEND_FAILED' }
-    console.error('Failed to send lead email:', error)
-  }
-
-  leads[leads.length - 1] = lead
-  await writeLeads(leads)
+  await mutateLeads(leads => leads.push(lead))
 
   res.status(201).json({
     ok: true,
     id: lead.id,
-    emailSent: Boolean(lead.email?.sent),
-    message: lead.email?.sent ? '需求已收到，并已同步到邮箱。' : '需求已收到，我们会尽快联系。'
+    emailQueued: Boolean(getTransporter()),
+    message: '需求已收到，我们会尽快联系。'
   })
+
+  void sendLeadMail(lead)
+    .then(email => mutateLeads(leads => {
+      const savedLead = leads.find(item => item.id === lead.id)
+      if (savedLead) savedLead.email = email
+    }))
+    .catch(error => {
+      console.error('Failed to send lead email:', error)
+      return mutateLeads(leads => {
+        const savedLead = leads.find(item => item.id === lead.id)
+        if (savedLead) savedLead.email = { sent: false, reason: error.code || error.message || 'MAIL_SEND_FAILED' }
+      })
+    })
 })
 
 app.post('/api/chat/sessions', async (req, res) => {
@@ -315,7 +331,8 @@ app.post('/api/chat/sessions/:id/messages', async (req, res) => {
     role,
     text,
     quick: Boolean(req.body?.quick),
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    email: role === 'user' ? { sent: false, reason: 'QUEUED' } : { sent: false, reason: 'NOT_USER_MESSAGE' }
   }
   const savedSession = await mutateChats(chats => {
     const session = chats.find(item => item.id === req.params.id)
@@ -328,16 +345,28 @@ app.post('/api/chat/sessions/:id/messages', async (req, res) => {
   })
   if (!savedSession) return res.status(404).json({ ok: false, message: '会话不存在。' })
 
-  let email = { sent: false, reason: 'NOT_USER_MESSAGE' }
+  res.status(201).json({
+    ok: true,
+    emailQueued: role === 'user' && Boolean(getTransporter()),
+    message: { id: message.id, createdAt: message.createdAt }
+  })
+
   if (role === 'user') {
-    try {
-      email = await sendChatMail(savedSession, message)
-    } catch (error) {
-      email = { sent: false, reason: error.message || 'MAIL_SEND_FAILED' }
-      console.error('Failed to send chat email:', error)
-    }
+    void sendChatMail(savedSession, message)
+      .then(email => mutateChats(chats => {
+        const session = chats.find(item => item.id === savedSession.id)
+        const savedMessage = session?.messages?.find(item => item.id === message.id)
+        if (savedMessage) savedMessage.email = email
+      }))
+      .catch(error => {
+        console.error('Failed to send chat email:', error)
+        return mutateChats(chats => {
+          const session = chats.find(item => item.id === savedSession.id)
+          const savedMessage = session?.messages?.find(item => item.id === message.id)
+          if (savedMessage) savedMessage.email = { sent: false, reason: error.code || error.message || 'MAIL_SEND_FAILED' }
+        })
+      })
   }
-  res.status(201).json({ ok: true, emailSent: Boolean(email.sent), message: { id: message.id, createdAt: message.createdAt } })
 })
 
 app.get('/api/admin/leads', requireAdmin, async (_req, res) => {

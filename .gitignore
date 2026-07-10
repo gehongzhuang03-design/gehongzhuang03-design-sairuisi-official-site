@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 backend/data/leads.json
+backend/data/chats.json
 *.log
 .demo-server.pid
 .demo-logs/
