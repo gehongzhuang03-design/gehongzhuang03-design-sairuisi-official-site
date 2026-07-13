@@ -3,12 +3,14 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import cors from 'cors'
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import express from 'express'
 import helmet from 'helmet'
 import nodemailer from 'nodemailer'
+import { ContentStudio } from './studio.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), quiet: true })
 const app = express()
 const port = Number(process.env.PORT || 3001)
 const dataDir = path.join(__dirname, 'data')
@@ -19,10 +21,11 @@ const webDist = path.resolve(__dirname, '..', 'frontend', 'dist')
 const adminToken = process.env.ADMIN_TOKEN || 'srs-admin-2026'
 const emailTo = process.env.LEAD_EMAIL_TO || '1760772194@qq.com'
 const notificationMode = process.env.NOTIFICATION_MODE || (process.env.RENDER_DEPLOYMENT === 'render' ? 'github-actions' : 'smtp')
+const studio = new ContentStudio({ dataDir, publicDir: dataDir })
 
 app.use(helmet({ contentSecurityPolicy: false }))
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || true }))
-app.use(express.json({ limit: '64kb' }))
+app.use(express.json({ limit: '256kb' }))
 
 const serviceData = {
   metrics: [
@@ -422,8 +425,50 @@ app.post('/api/admin/notifications/mark', requireAdmin, async (req, res) => {
   res.json({ ok: true, email })
 })
 
+app.get('/api/studio/dashboard', requireAdmin, async (_req, res, next) => {
+  try {
+    res.json({ ok: true, ...(await studio.dashboard()) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post('/api/studio/collect', requireAdmin, async (req, res, next) => {
+  try {
+    const result = await studio.collect({ autoGenerate: Boolean(req.body?.autoGenerate) })
+    res.json({ ok: true, ...result })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post('/api/studio/items/:id/generate', requireAdmin, async (req, res, next) => {
+  try {
+    res.json({ ok: true, item: await studio.generate(req.params.id) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.patch('/api/studio/items/:id', requireAdmin, async (req, res, next) => {
+  try {
+    res.json({ ok: true, item: await studio.updateItem(req.params.id, req.body || {}) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.patch('/api/studio/settings', requireAdmin, async (req, res, next) => {
+  try {
+    res.json({ ok: true, settings: await studio.updateSettings(req.body || {}) })
+  } catch (error) {
+    next(error)
+  }
+})
+
 app.get('/admin', (_req, res) => res.type('html').send(adminPage()))
 
+app.use('/generated', express.static(studio.generatedDir, { maxAge: '7d', immutable: true }))
 app.use(express.static(webDist))
 app.get('*', async (_req, res, next) => {
   try {
@@ -439,5 +484,8 @@ app.use((error, _req, res, _next) => {
   console.error(error)
   res.status(500).json({ ok: false, message: '服务暂时不可用，请稍后重试。' })
 })
+
+setInterval(() => void studio.runScheduleTick(), 60_000).unref()
+void studio.runScheduleTick()
 
 app.listen(port, () => console.log(`Sairuisi API running on http://localhost:${port}`))

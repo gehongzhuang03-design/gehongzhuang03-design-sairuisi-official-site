@@ -3,8 +3,11 @@ dist/
 .env
 backend/data/leads.json
 backend/data/chats.json
+backend/data/content-studio.json
+backend/data/generated/
 *.log
 .demo-server.pid
+.studio-server.pid
 .demo-logs/
 qa-evidence/
 frontend/public/assets/flagship/hero-*.png

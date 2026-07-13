@@ -13,6 +13,18 @@ services:
         value: production
       - key: ADMIN_TOKEN
         sync: false
+      - key: AI_BASE_URL
+        value: https://vip.auto-code.net/v1
+      - key: TEXT_API_KEY
+        sync: false
+      - key: TEXT_MODEL
+        value: glm-5.2
+      - key: IMAGE_API_KEY
+        sync: false
+      - key: IMAGE_MODEL
+        value: gpt-image-2
+      - key: STUDIO_DAILY_TIME
+        value: "08:00"
       - key: LEAD_EMAIL_TO
         value: 1760772194@qq.com
       - key: SMTP_HOST

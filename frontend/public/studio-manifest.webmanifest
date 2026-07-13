@@ -1,0 +1,21 @@
+{
+  "name": "赛锐锶竞赛内容工作台",
+  "short_name": "赛锐锶内容",
+  "description": "每日竞赛信息采集、公众号与小红书推文生成和手机发布助手",
+  "start_url": "/studio",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f7f2",
+  "theme_color": "#1e6d51",
+  "lang": "zh-CN",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/flagship/product-materials.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

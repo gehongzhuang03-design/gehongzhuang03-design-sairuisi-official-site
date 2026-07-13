@@ -23,6 +23,7 @@ import {
   X
 } from '@phosphor-icons/react'
 import './styles.css'
+import StudioApp from './studio.jsx'
 
 const heroSlides = [
   {
@@ -864,4 +865,4 @@ function App() {
   )
 }
 
-createRoot(document.getElementById('root')).render(<App />)
+createRoot(document.getElementById('root')).render(window.location.pathname.startsWith('/studio') ? <StudioApp /> : <App />)
